@@ -325,9 +325,7 @@
         .status-in-use { color: #1e40af; background-color: #dbeafe; }
         .status-maintenance { color: #92400e; background-color: #fef3c7; }
         .status-retired { color: #991b1b; background-color: #fee2e2; }
-        /* --- MODIFICATION START: Added style for pending approval --- */
         .status-pending-approval { color: #9a3412; background-color: #ffedd5; }
-        /* --- MODIFICATION END --- */
 
         .action-buttons {
             display: flex;
@@ -767,7 +765,6 @@
         }
 
         // --- Core Data Functions ---
-        // --- MODIFICATION START: Updated business rule to allow 'pending-approval' in Mbarara ---
         function applyBusinessRules(item) {
             // Rule: If an item's district is 'Mbarara', it cannot be 'in-use'. If it is, move it to 'available'.
             // This allows for 'pending-approval', 'maintenance', etc. statuses in Mbarara.
@@ -779,7 +776,6 @@
             }
             return item;
         }
-        // --- MODIFICATION END ---
 
         function loadData() {
             try {
@@ -813,7 +809,6 @@
             window.dispatchEvent(new Event('storage'));
         }
 
-        // --- MODIFICATION START: Added sample data for 'pending-approval' ---
         function getSampleData() {
             const today = new Date().toLocaleDateString();
             return [
@@ -822,7 +817,6 @@
                 { id: 'CHG-9901', name: 'Anker PowerCore', type: 'charger', status: 'pending-approval', assigned: '', district: 'mbarara', lastUpdate: today, notes: 'Returned from Kyenjojo' }
             ];
         }
-        // --- MODIFICATION END ---
 
         function generateId(type) {
             let prefix = (type || 'GEN').substring(0, 3).toUpperCase();
@@ -914,16 +908,19 @@
             updateSelectAllCheckboxState();
         }
         
-        // --- MODIFICATION START: Updated stats calculation to exclude pending/retired items from total ---
+        // --- MODIFICATION START: Updated stats calculation logic ---
         function updateStats() {
-            const activeInventory = inventory.filter(i => i.status !== 'pending-approval' && i.status !== 'retired');
-            const availableItems = activeInventory.filter(i => i.status === 'available').length;
-            const inUseItems = activeInventory.filter(i => i.status === 'in-use').length;
-            const maintenanceItems = activeInventory.filter(i => i.status === 'maintenance').length;
+            // Calculate stats based on the full inventory list
+            const totalItems = inventory.length;
+            const availableItems = inventory.filter(i => i.status === 'available').length;
+            const inUseItems = inventory.filter(i => i.status === 'in-use').length;
+            const maintenanceItems = inventory.filter(i => i.status === 'maintenance').length;
             const retiredItems = inventory.filter(i => i.status === 'retired').length;
 
-            // Total items is now the sum of active, working inventory
-            document.getElementById('total-items').textContent = availableItems + inUseItems + maintenanceItems;
+            // Update the total items card to reflect the entire inventory
+            document.getElementById('total-items').textContent = totalItems;
+            
+            // Update other stat cards as before
             document.getElementById('available-items').textContent = availableItems;
             document.getElementById('in-use-items').textContent = inUseItems;
             document.getElementById('maintenance-items').textContent = maintenanceItems;
@@ -932,11 +929,11 @@
 
         function updateTypeStats() {
             const types = ['tablet', 'phone', 'charger', 'bag', 'power-bank'];
-            const activeInventory = inventory.filter(i => i.status !== 'pending-approval' && i.status !== 'retired');
-
+            
             types.forEach(type => {
-                const total = activeInventory.filter(i => i.type === type).length;
-                const available = activeInventory.filter(i => i.type === type && i.status === 'available').length;
+                // Use the full inventory for calculations
+                const total = inventory.filter(i => i.type === type).length;
+                const available = inventory.filter(i => i.type === type && i.status === 'available').length;
                 const typeId = type.replace('-', ''); // for power-bank
                 document.getElementById(`${typeId}-total`).textContent = total;
                 document.getElementById(`${typeId}-available`).textContent = available;
@@ -1309,4 +1306,5 @@
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
+
 </html>
